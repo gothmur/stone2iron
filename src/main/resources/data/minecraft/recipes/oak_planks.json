@@ -6,7 +6,7 @@
     { "tag": "minecraft:oak_logs" }
   ],
   "result": {
-    "count": 10,
-    "id": "minecraft:oak_planks"
+    "item": "minecraft:oak_planks",
+    "count": 10
   }
 }
