@@ -3,10 +3,12 @@
   "category": "building",
   "group": "planks",
   "ingredients": [
-    { "tag": "minecraft:oak_logs" }
+    {
+      "tag": "minecraft:oak_logs"
+    }
   ],
   "result": {
-    "item": "minecraft:oak_planks",
-    "count": 10
+    "count": 10,
+    "id": "minecraft:oak_planks"
   }
 }
