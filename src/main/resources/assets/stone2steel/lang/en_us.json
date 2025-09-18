@@ -9,5 +9,7 @@
   "stone2steel.configuration.items": "Item List",
   "stone2steel.configuration.logDirtBlock": "Log Dirt Block",
   "stone2steel.configuration.magicNumberIntroduction": "Magic Number Text",
-  "stone2steel.configuration.magicNumber": "Magic Number"
+  "stone2steel.configuration.magicNumber": "Magic Number",
+
+  "item.stone2steel.flint_shard": "Flint Shard"
 }
