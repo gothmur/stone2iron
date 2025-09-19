@@ -26,13 +26,27 @@ public class KnappingHandler {
         if (mainHand.is(Items.FLINT) && offHand.is(Items.FLINT)) {
             if (!player.level().isClientSide) {
                 RandomSource rng = player.level().getRandom();
-                boolean success = rng.nextFloat() < 0.70f; // 70% šanca
+                float roll = rng.nextFloat();
 
-                // voliteľný krátky cooldown na flint ( ~0.25s pri 20 tps )
+                // cooldown aby sa to nespamovalo
                 player.getCooldowns().addCooldown(Items.FLINT, 5);
 
-                if (success) {
-                    // úspech: spotrebuj oba flinty, daj shard
+                if (roll < 0.20f) {
+                    // 20 % šanca na biface
+                    mainHand.shrink(1);
+                    offHand.shrink(1);
+
+                    ItemStack biface = new ItemStack(stone2steel.FLINT_BIFACE.get());
+                    if (!player.getInventory().add(biface)) {
+                        player.drop(biface, false);
+                    }
+
+                    player.level().playSound(null, player.blockPosition(),
+                            SoundEvents.STONE_BREAK, SoundSource.PLAYERS, 1.0f, 0.9f);
+                    player.displayClientMessage(Component.literal("Podarilo sa vytvoriť päsťný klin!"), true);
+
+                } else if (roll < 0.80f) {
+                    // 60 % šanca na shard
                     mainHand.shrink(1);
                     offHand.shrink(1);
 
@@ -42,15 +56,16 @@ public class KnappingHandler {
                     }
 
                     player.level().playSound(null, player.blockPosition(),
-                            SoundEvents.STONE_BREAK, SoundSource.PLAYERS, 1.0f, 1.0f);
-                    player.displayClientMessage(Component.literal("Ostrý pazúrik: podarilo sa!"), true);
+                            SoundEvents.STONE_BREAK, SoundSource.PLAYERS, 1.0f, 1.1f);
+                    player.displayClientMessage(Component.literal("Podarilo sa vytvoriť ostrý pazúrik!"), true);
+
                 } else {
-                    // neúspech: spotrebuj iba 1 flint z main hand
+                    // 20 % fail
                     mainHand.shrink(1);
 
                     player.level().playSound(null, player.blockPosition(),
-                            SoundEvents.STONE_HIT, SoundSource.PLAYERS, 0.7f, 0.9f + rng.nextFloat() * 0.2f);
-                    player.displayClientMessage(Component.literal("Nepodarilo sa vytvoriť ostrie."), true);
+                            SoundEvents.STONE_HIT, SoundSource.PLAYERS, 0.7f, 1.0f);
+                    player.displayClientMessage(Component.literal("Pokus o štiepanie sa nepodaril."), true);
                 }
             }
 
