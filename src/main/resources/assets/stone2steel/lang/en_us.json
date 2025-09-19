@@ -1,15 +1,3 @@
 {
-  "itemGroup.stone2steel": "Example Mod Tab",
-  "block.stone2steel.example_block": "Example Block",
-  "item.stone2steel.example_item": "Example Item",
-
-  "stone2steel.configuration.title": "stone2steel Configs",
-  "stone2steel.configuration.section.stone2steel.common.toml": "stone2steel Configs",
-  "stone2steel.configuration.section.stone2steel.common.toml.title": "stone2steel Configs",
-  "stone2steel.configuration.items": "Item List",
-  "stone2steel.configuration.logDirtBlock": "Log Dirt Block",
-  "stone2steel.configuration.magicNumberIntroduction": "Magic Number Text",
-  "stone2steel.configuration.magicNumber": "Magic Number",
-
   "item.stone2steel.flint_shard": "Flint Shard"
 }
