@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "stone2steel:flint_shard" },
+    { "item": "stone2steel:sap_glue" },
+    { "item": "stone2steel:tendon" }
+  ],
+  "result": { "id": "stone2steel:flint_knife", "count": 1 }
+}

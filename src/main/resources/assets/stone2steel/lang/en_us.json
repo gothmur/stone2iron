@@ -1,5 +1,15 @@
 {
+  "itemGroup.stone2steel": "Stone2Steel",
   "item.stone2steel.flint_shard": "Flint Shard",
   "item.stone2steel.flint_biface": "Flint Biface",
-  "item.stone2steel.tendon": "Tendon"
+  "item.stone2steel.tendon": "Tendon",
+  "item.stone2steel.tree_sap": "Tree Sap",
+  "item.stone2steel.tree_bark": "Tree Bark",
+
+  "item.stone2steel.ash": "Ash",
+  "item.stone2steel.sap_glue": "Sap Glue",
+  "item.stone2steel.plant_fiber": "Plant Fiber",
+  "item.stone2steel.cordage": "Cordage",
+  "item.stone2steel.rope": "Rope",
+  "item.stone2steel.flint_knife": "Flint Knife"
 }
