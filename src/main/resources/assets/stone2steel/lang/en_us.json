@@ -11,5 +11,15 @@
   "item.stone2steel.plant_fiber": "Plant Fiber",
   "item.stone2steel.cordage": "Cordage",
   "item.stone2steel.rope": "Rope",
-  "item.stone2steel.flint_knife": "Flint Knife"
+  "item.stone2steel.flint_knife": "Flint Knife",
+
+  "item.stone2steel.curved_branch": "Curved Branch",
+  "item.stone2steel.wood_billet": "Wood Billet",
+  "item.stone2steel.spindle": "Spindle",
+  "item.stone2steel.fireboard": "Fireboard",
+  "item.stone2steel.bow_drill": "Bow Drill",
+
+  "msg.stone2steel.billet_ok": "You split off a wood billet.",
+  "msg.stone2steel.spindle_ok": "You shaped a spindle.",
+  "msg.stone2steel.fireboard_ok": "You flattened a fireboard."
 }

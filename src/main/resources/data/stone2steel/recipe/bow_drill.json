@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "stone2steel:curved_branch" },
+    { "item": "stone2steel:spindle" },
+    { "tag":  "stone2steel:bow_strings" }
+  ],
+  "result": {
+    "id": "stone2steel:bow_drill",
+    "count": 1
+  }
+}
