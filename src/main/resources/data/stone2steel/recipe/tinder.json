@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    { "item": "stone2steel:plant_fiber" },
-    { "item": "stone2steel:tree_bark" }
-  ],
-  "result": { "id": "stone2steel:tinder", "count": 2 }
-}

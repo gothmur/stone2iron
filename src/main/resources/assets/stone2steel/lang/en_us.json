@@ -29,5 +29,9 @@
   "msg.stone2steel.billet_ok": "You split off a wood billet.",
   "msg.stone2steel.spindle_ok": "You shaped a spindle.",
   "msg.stone2steel.fireboard_ok": "You flattened a fireboard.",
-  "msg.stone2steel.firebow_no_tinder": "You need tinder!"
+  "msg.stone2steel.firebow_no_tinder": "You need tinder!",
+  "msg.stone2steel.tinder_ok": "You prepared tinder.",
+  "msg.stone2steel.ember_ok": "You created an ember.",
+  "msg.stone2steel.ember_ok": "Vytvoril si žeravík."
+
 }

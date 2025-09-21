@@ -1,4 +1,4 @@
 {
   "parent": "minecraft:item/generated",
-  "textures": { "layer0": "minecraft:item/fire_charge" }
+  "textures": { "layer0": "stone2steel:item/ember" }
 }

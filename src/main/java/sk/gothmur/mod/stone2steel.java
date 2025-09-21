@@ -24,6 +24,7 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
+import sk.gothmur.mod.registry.ModSounds;
 import sk.gothmur.mod.item.FlintBifaceItem;
 import sk.gothmur.mod.item.FlintKnifeItem;
 
@@ -57,6 +58,7 @@ public class stone2steel {
     public static final DeferredItem<Item> SPINDLE = ITEMS.registerSimpleItem("spindle");
     public static final DeferredItem<Item> EMBER = ITEMS.registerSimpleItem("ember");
     public static final DeferredItem<Item> BOW_DRILL = ITEMS.registerSimpleItem("bow_drill"); // názov z receptu
+    public static final DeferredItem<Item> TINDER = ITEMS.registerSimpleItem("tinder");
 
     // nový polotovar na drevo-prácu
     public static final DeferredItem<Item> WOOD_BILLET = ITEMS.registerSimpleItem("wood_billet");
@@ -111,6 +113,7 @@ public class stone2steel {
                         out.accept(BOW_DRILL.get());
                         out.accept(FIREBOARD.get());
                         out.accept(KINDLING.get());
+                        out.accept(TINDER.get());
                     })
                     .build());
 
@@ -118,6 +121,7 @@ public class stone2steel {
         ITEMS.register(modBus);
         BLOCKS.register(modBus);
         TABS.register(modBus);
+        ModSounds.register(modBus);
 
         modBus.addListener(this::commonSetup);
 
