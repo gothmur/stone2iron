@@ -1,90 +1,56 @@
 package sk.gothmur.mod.event;
 
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import sk.gothmur.mod.stone2steel;
-import sk.gothmur.mod.util.ModTags;
 
-@EventBusSubscriber(modid = stone2steel.MODID, bus = EventBusSubscriber.Bus.GAME)
+import sk.gothmur.mod.stone2steel;
+
+@EventBusSubscriber(modid = stone2steel.MODID) // ✅ odstránené deprecated 'bus = ...'
 public class WoodworkHandlers {
 
-    private static final int COOLDOWN_TICKS_FAST = 20;   // ~1s
-    private static final int COOLDOWN_TICKS_SLOW = 100;  // ~5s
-    private static final int BIFACE_DMG_PER_BILLET = 2;
-
+    // PRAVÝ KLIK s FLINT_BIFACE na LOG -> WOOD_BILLET (drop do invu)
     @SubscribeEvent
-    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+    public static void onBifaceOnLog(PlayerInteractEvent.RightClickBlock event) {
         Level level = event.getLevel();
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
 
+        var pos = event.getPos();
+        var state = level.getBlockState(pos);
         Player player = event.getEntity();
-        InteractionHand hand = event.getHand();
-        ItemStack held = player.getItemInHand(hand);
-        BlockPos pos = event.getPos();
-        BlockState state = level.getBlockState(pos);
+        var held = player.getItemInHand(event.getHand());
 
-        // 1) BIFACE + LOG -> WOOD_BILLET (funguje)
-        if (held.is(stone2steel.FLINT_BIFACE.get()) && state.is(BlockTags.LOGS)) {
-            if (player.getCooldowns().isOnCooldown(held.getItem())) return;
-
-            player.getCooldowns().addCooldown(held.getItem(), COOLDOWN_TICKS_SLOW);
-            held.hurtAndBreak(BIFACE_DMG_PER_BILLET, player, null);
+        boolean isLog = state.is(net.minecraft.tags.BlockTags.LOGS);
+        if (isLog && held.is(stone2steel.FLINT_BIFACE.get())) {
+            // odmena: 1x wood_billet
             giveOrDrop(player, new ItemStack(stone2steel.WOOD_BILLET.get(), 1));
-            player.causeFoodExhaustion(0.002f);
-            player.displayClientMessage(Component.translatable("msg.stone2steel.billet_ok"), true);
-
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
-            return;
         }
+    }
 
-        // helper: je blok abrazívny? (tag ALEBO fallback na vanilla blocks)
-        boolean isAbrasive = state.is(ModTags.Blocks.ABRASIVE_SURFACES)
-                || state.is(Blocks.STONE)
-                || state.is(Blocks.COBBLESTONE)
-                || state.is(Blocks.MOSSY_COBBLESTONE)
-                || state.is(Blocks.DEEPSLATE)
-                || state.is(Blocks.ANDESITE)
-                || state.is(Blocks.GRANITE)
-                || state.is(Blocks.DIORITE);
+    // PRAVÝ KLIK s WOOD_BILLET na ABRASIVE_SURFACE -> FIREBOARD (item)
+    @SubscribeEvent
+    public static void onBilletOnAbrasive(PlayerInteractEvent.RightClickBlock event) {
+        Level level = event.getLevel();
+        if (level.isClientSide()) return;
 
-        // 2) STICK + ABRASIVE_SURFACE -> SPINDLE
-        if (held.is(Items.STICK) && isAbrasive) {
-            if (player.getCooldowns().isOnCooldown(held.getItem())) return;
+        var pos = event.getPos();
+        var state = level.getBlockState(pos);
+        Player player = event.getEntity();
+        var held = player.getItemInHand(event.getHand());
 
-            player.getCooldowns().addCooldown(held.getItem(), COOLDOWN_TICKS_FAST);
-            held.shrink(1);
-            giveOrDrop(player, new ItemStack(stone2steel.SPINDLE.get(), 1));
-            player.causeFoodExhaustion(0.002f);
-            player.displayClientMessage(Component.translatable("msg.stone2steel.spindle_ok"), true);
-
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
-            return;
-        }
-
-        // 3) WOOD_BILLET + ABRASIVE_SURFACE -> FIREBOARD
+        boolean isAbrasive = state.is(stone2steel.ABRASIVE_SURFACES);
         if (held.is(stone2steel.WOOD_BILLET.get()) && isAbrasive) {
-            if (player.getCooldowns().isOnCooldown(held.getItem())) return;
-
-            player.getCooldowns().addCooldown(held.getItem(), COOLDOWN_TICKS_SLOW);
+            // minút jeden billet a dať 1x fireboard (item – placeable na náš blok)
             held.shrink(1);
             giveOrDrop(player, new ItemStack(stone2steel.FIREBOARD.get(), 1));
-            player.causeFoodExhaustion(0.003f);
-            player.displayClientMessage(Component.translatable("msg.stone2steel.fireboard_ok"), true);
-
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
         }

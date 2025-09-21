@@ -1,20 +1,28 @@
 package sk.gothmur.mod;
 
 import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
+
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredItem;
+
 import net.neoforged.neoforge.registries.DeferredRegister;
-import org.slf4j.Logger;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import sk.gothmur.mod.item.FlintBifaceItem;
 import sk.gothmur.mod.item.FlintKnifeItem;
@@ -25,71 +33,99 @@ public class stone2steel {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-    public static final DeferredRegister<CreativeModeTab> TABS =
-            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
+    public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    // --- základné suroviny a komponenty ---
-    public static final DeferredItem<Item> FLINT_SHARD  = ITEMS.registerSimpleItem("flint_shard");
-    public static final DeferredItem<Item> TENDON       = ITEMS.registerSimpleItem("tendon");
-    public static final DeferredItem<Item> PLANT_FIBER  = ITEMS.registerSimpleItem("plant_fiber");
-    public static final DeferredItem<Item> CORDAGE      = ITEMS.registerSimpleItem("cordage");
-    public static final DeferredItem<Item> ROPE         = ITEMS.registerSimpleItem("rope");
-    public static final DeferredItem<Item> TREE_SAP     = ITEMS.registerSimpleItem("tree_sap");
-    public static final DeferredItem<Item> TREE_BARK    = ITEMS.registerSimpleItem("tree_bark");
-    public static final DeferredItem<Item> SAP_GLUE     = ITEMS.registerSimpleItem("sap_glue");
-    public static final DeferredItem<Item> ASH          = ITEMS.registerSimpleItem("ash");
+    // --- ITEMS ---
+    public static final DeferredItem<Item> FLINT_SHARD = ITEMS.registerSimpleItem("flint_shard");
 
-    // --- polotovary pre bowdrill slučku ---
+    public static final DeferredItem<Item> FLINT_BIFACE =
+            ITEMS.register("flint_biface", () -> new FlintBifaceItem(new Item.Properties(), 2.0D, -2.4D));
+
+    public static final DeferredItem<Item> FLINT_KNIFE =
+            ITEMS.register("flint_knife", () -> new FlintKnifeItem(new Item.Properties(), 1.0D, -2.0D, 60)); // ⚙ durability=60
+
+    public static final DeferredItem<Item> TENDON = ITEMS.registerSimpleItem("tendon");
+    public static final DeferredItem<Item> TREE_SAP = ITEMS.registerSimpleItem("tree_sap");
+    public static final DeferredItem<Item> TREE_BARK = ITEMS.registerSimpleItem("tree_bark");
+    public static final DeferredItem<Item> PLANT_FIBER = ITEMS.registerSimpleItem("plant_fiber");
+    public static final DeferredItem<Item> CORDAGE = ITEMS.registerSimpleItem("cordage");
+    public static final DeferredItem<Item> ROPE = ITEMS.registerSimpleItem("rope");
+    public static final DeferredItem<Item> ASH = ITEMS.registerSimpleItem("ash");
+    public static final DeferredItem<Item> SAP_GLUE = ITEMS.registerSimpleItem("sap_glue");
     public static final DeferredItem<Item> CURVED_BRANCH = ITEMS.registerSimpleItem("curved_branch");
-    public static final DeferredItem<Item> WOOD_BILLET   = ITEMS.registerSimpleItem("wood_billet");
-    public static final DeferredItem<Item> SPINDLE       = ITEMS.registerSimpleItem("spindle");
-    public static final DeferredItem<Item> FIREBOARD     = ITEMS.registerSimpleItem("fireboard");
-    public static final DeferredItem<Item> BOW_DRILL     = ITEMS.registerSimpleItem("bow_drill");
+    public static final DeferredItem<Item> SPINDLE = ITEMS.registerSimpleItem("spindle");
+    public static final DeferredItem<Item> EMBER = ITEMS.registerSimpleItem("ember");
+    public static final DeferredItem<Item> BOW_DRILL = ITEMS.registerSimpleItem("bow_drill"); // názov z receptu
 
-    // --- nástroje ---
-    public static final DeferredItem<Item> FLINT_BIFACE = ITEMS.register("flint_biface",
-            () -> new FlintBifaceItem(new Item.Properties(), 1.0D, -2.2D)); // dmg, speed
+    // nový polotovar na drevo-prácu
+    public static final DeferredItem<Item> WOOD_BILLET = ITEMS.registerSimpleItem("wood_billet");
 
-    // DOPLNENÉ: trvácnosť (durability) = 45
-    public static final DeferredItem<Item> FLINT_KNIFE = ITEMS.register("flint_knife",
-            () -> new FlintKnifeItem(new Item.Properties(), 1.0D, -2.0D, 45)); // dmg, speed, durability
+    // --- BLOCKS + ich Itemy ---
+    public static final DeferredBlock<Block> FIREBOARD_BLOCK =
+            BLOCKS.registerSimpleBlock("fireboard",
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.WOOD)
+                            .strength(1.0F));
 
-    // --- creative tab ---
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> S2S_TAB =
-            TABS.register("s2s_tab", () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.stone2steel"))
-                    .withTabsBefore(CreativeModeTabs.COMBAT)
+    public static final DeferredItem<BlockItem> FIREBOARD =
+            ITEMS.registerSimpleBlockItem("fireboard", FIREBOARD_BLOCK);
+
+    // Kindling blok (ak ho už máš registrovaný inde, ponechaj; inak základná registrácia)
+    public static final DeferredBlock<Block> KINDLING_BLOCK =
+            BLOCKS.registerSimpleBlock("kindling",
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.WOOD)
+                            .strength(0.5F));
+
+    public static final DeferredItem<BlockItem> KINDLING =
+            ITEMS.registerSimpleBlockItem("kindling", KINDLING_BLOCK);
+
+    // Tag pre brúsne povrchy (definovaný v data tagoch); tu len odkaz (public nech ho vedia používať handlery)
+    public static final net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> ABRASIVE_SURFACES =
+            net.minecraft.tags.TagKey.create(Registries.BLOCK,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "abrasive_surfaces"));
+
+    // --- Creative Tab (nepovinné) ---
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MAIN_TAB =
+            TABS.register("main", () -> CreativeModeTab.builder()
                     .icon(() -> FLINT_BIFACE.get().getDefaultInstance())
+                    .title(Component.translatable("itemGroup.stone2steel"))
+                    .withTabsBefore(CreativeModeTabs.TOOLS_AND_UTILITIES)
                     .displayItems((params, out) -> {
                         out.accept(FLINT_SHARD.get());
                         out.accept(FLINT_BIFACE.get());
                         out.accept(FLINT_KNIFE.get());
-
                         out.accept(TENDON.get());
+                        out.accept(TREE_SAP.get());
+                        out.accept(TREE_BARK.get());
                         out.accept(PLANT_FIBER.get());
                         out.accept(CORDAGE.get());
                         out.accept(ROPE.get());
-                        out.accept(TREE_SAP.get());
-                        out.accept(TREE_BARK.get());
-                        out.accept(SAP_GLUE.get());
                         out.accept(ASH.get());
-
+                        out.accept(SAP_GLUE.get());
                         out.accept(CURVED_BRANCH.get());
-                        out.accept(WOOD_BILLET.get());
                         out.accept(SPINDLE.get());
-                        out.accept(FIREBOARD.get());
+                        out.accept(WOOD_BILLET.get());
+                        out.accept(EMBER.get());
                         out.accept(BOW_DRILL.get());
+                        out.accept(FIREBOARD.get());
+                        out.accept(KINDLING.get());
                     })
                     .build());
 
     public stone2steel(IEventBus modBus, ModContainer modContainer) {
         ITEMS.register(modBus);
+        BLOCKS.register(modBus);
         TABS.register(modBus);
+
         modBus.addListener(this::commonSetup);
+
+        // správny enum: COMMON (nie Common)
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
-    private void commonSetup(FMLCommonSetupEvent e) {
+    private void commonSetup(FMLCommonSetupEvent evt) {
         LOGGER.info("[{}] init complete", MODID);
     }
 }

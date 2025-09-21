@@ -19,7 +19,15 @@
   "item.stone2steel.fireboard": "Fireboard",
   "item.stone2steel.bow_drill": "Bow Drill",
 
+  "item.stone2steel.tinder": "Tinder",
+  "item.stone2steel.ember": "Ember",
+  "item.stone2steel.firebow": "Fire Bow",
+
+  "block.stone2steel.fireboard": "Fireboard",
+  "block.stone2steel.kindling": "Kindling",
+
   "msg.stone2steel.billet_ok": "You split off a wood billet.",
   "msg.stone2steel.spindle_ok": "You shaped a spindle.",
-  "msg.stone2steel.fireboard_ok": "You flattened a fireboard."
+  "msg.stone2steel.fireboard_ok": "You flattened a fireboard.",
+  "msg.stone2steel.firebow_no_tinder": "You need tinder!"
 }

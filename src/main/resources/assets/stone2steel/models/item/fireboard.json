@@ -1,4 +1,1 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": { "layer0": "stone2steel:item/fireboard" }
-}
+{ "parent": "stone2steel:block/fireboard" }
