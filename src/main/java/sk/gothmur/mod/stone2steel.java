@@ -9,9 +9,13 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.Tiers;
+import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -27,6 +31,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import sk.gothmur.mod.registry.ModSounds;
 import sk.gothmur.mod.item.FlintBifaceItem;
 import sk.gothmur.mod.item.FlintKnifeItem;
+import sk.gothmur.mod.item.FlintAxeItem;
 
 @Mod(stone2steel.MODID)
 public class stone2steel {
@@ -59,6 +64,19 @@ public class stone2steel {
     public static final DeferredItem<Item> EMBER = ITEMS.registerSimpleItem("ember");
     public static final DeferredItem<Item> BOW_DRILL = ITEMS.registerSimpleItem("bow_drill"); // názov z receptu
     public static final DeferredItem<Item> TINDER = ITEMS.registerSimpleItem("tinder");
+
+    public static final DeferredItem<AxeItem> FLINT_AXE =
+            ITEMS.register("flint_axe",
+                    () -> new FlintAxeItem(
+                            Tiers.STONE,
+                            new Item.Properties().attributes(
+                                    // Axe = DiggerItem → nastav DMG & AS ako vanilla stone axe
+                                    DiggerItem.createAttributes(Tiers.STONE, 7.0F, -3.2F)
+                            )
+                    ));
+
+
+
 
     // nový polotovar na drevo-prácu
     public static final DeferredItem<Item> WOOD_BILLET = ITEMS.registerSimpleItem("wood_billet");
@@ -114,6 +132,7 @@ public class stone2steel {
                         out.accept(FIREBOARD.get());
                         out.accept(KINDLING.get());
                         out.accept(TINDER.get());
+                        out.accept(FLINT_AXE.get());
                     })
                     .build());
 

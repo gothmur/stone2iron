@@ -17,6 +17,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
@@ -84,7 +88,7 @@ public class FireMakingHandlers {
 
         player.swing(hand, true);
 
-        // ► Loop zvuku: spustíme hneď na začiatku (prvý 1s klip)
+        // ► Loop 1s zvuku (0s → 1s → 2s) s jemným variovaním hlasitosti/pitch
         playLoopGrind(level, pos, 0);
 
         // malé triesky zo samotného fireboard bloku
@@ -107,10 +111,8 @@ public class FireMakingHandlers {
 
         int t = d.ticks + 1;
 
-        // ► Loop zvuku každých ~20 tickov (≈ 1s): t=20 a t=40 (t=60 je už finish)
-        if (t == 20 || t == 40) {
-            playLoopGrind(level, d.pos, t);
-        }
+        // ► opakovanie loop zvuku v ~1s intervaloch
+        if (t == 20 || t == 40) playLoopGrind(level, d.pos, t);
 
         // rytmus: swing + triesky
         if (t % SWING_PERIOD == 0) {
@@ -126,23 +128,20 @@ public class FireMakingHandlers {
             // poškodiť Bow Drill o 1 (signatúra s EquipmentSlot)
             ItemStack drill = player.getItemInHand(d.hand);
             EquipmentSlot slot = (d.hand == InteractionHand.MAIN_HAND) ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
-            if (!drill.isEmpty()) {
-                drill.hurtAndBreak(1, player, slot);
-            }
+            if (!drill.isEmpty()) drill.hurtAndBreak(1, player, slot);
 
             // odmena: ember
             giveOrDrop(player, new ItemStack(stone2steel.EMBER.get(), 1));
             player.displayClientMessage(Component.translatable("msg.stone2steel.ember_ok"), true);
 
-            // krátky úspechový cue
+            // úspech: krátky cue
             level.playSound(null, d.pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 0.7f, 1.0f);
             level.playSound(null, d.pos, SoundEvents.ITEM_PICKUP,        SoundSource.PLAYERS, 0.40f, 1.00f);
 
             ACTIVE.remove(player.getUUID());
-            return;
+        } else {
+            ACTIVE.put(player.getUUID(), new Drilling(d.pos, d.hand, d.snapshot, t, d.lastUseGameTime));
         }
-
-        ACTIVE.put(player.getUUID(), new Drilling(d.pos, d.hand, d.snapshot, t, d.lastUseGameTime));
     }
 
     private static boolean stillValid(Player p, Drilling d) {
@@ -155,17 +154,60 @@ public class FireMakingHandlers {
         return state.is(stone2steel.FIREBOARD_BLOCK.get()) && close;
     }
 
+    /* ============================================================
+       EMBER na KINDLING_BLOCK -> rozsvieť CAMPFIRE (Right-click)
+       ============================================================ */
+    @SubscribeEvent
+    public static void onUseEmberOnKindling(PlayerInteractEvent.RightClickBlock event) {
+        Level level = event.getLevel();
+        if (level.isClientSide()) return;
+
+        BlockPos pos = event.getPos();
+        var state = level.getBlockState(pos);
+        Player player = event.getEntity();
+        InteractionHand hand = event.getHand();
+        ItemStack inHand = player.getItemInHand(hand);
+
+        // potrebujeme: klik na KINDLING_BLOCK a v ruke EMBER
+        if (!state.is(stone2steel.KINDLING_BLOCK.get())) return;
+        if (!inHand.is(stone2steel.EMBER.get())) return;
+
+        // nahradíme kindling campfirom zapáleným smerom od hráča
+        boolean signal = level.getBlockState(pos.below()).is(Blocks.HAY_BLOCK);
+
+        var campfire = Blocks.CAMPFIRE.defaultBlockState()
+                .setValue(CampfireBlock.LIT, true)
+                .setValue(CampfireBlock.SIGNAL_FIRE, signal)
+                .setValue(CampfireBlock.FACING, player.getDirection().getOpposite());
+        if (campfire.hasProperty(BlockStateProperties.WATERLOGGED)) {
+            campfire = campfire.setValue(BlockStateProperties.WATERLOGGED, false);
+        }
+
+        // efekty + výmena bloku
+        spawnIgniteBurst(level, pos);
+        level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 0.9f, 1.0f);
+        level.playSound(null, pos, SoundEvents.CAMPFIRE_CRACKLE,  SoundSource.BLOCKS, 0.7f, 1.0f);
+        level.setBlock(pos, campfire, 3);
+
+        // spotrebuj ember
+        inHand.shrink(1);
+
+        // spätná väzba
+        player.displayClientMessage(Component.translatable("msg.stone2steel.campfire_lit"), true);
+
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+    }
+
     /* ================= helpers: zvuk/efekty/loot ================= */
 
     private static void playLoopGrind(Level level, BlockPos pos, int t) {
-        // jemný ramp-up hlasitosti + pitch variance
-        // t=0  → tichšie, t=20 → o trochu hlasnejšie, t=40 → najvýraznejší
         float baseVol = (t == 0) ? 0.65f : (t == 20 ? 0.75f : 0.85f);
-        float volJitter = (float)(Math.random() * 0.06f) - 0.03f; // ±0.03
+        float volJitter = (float)(Math.random() * 0.06f) - 0.03f;
         float volume = clamp01(baseVol + volJitter);
 
         float basePitch = (t == 0) ? 0.96f : (t == 20 ? 1.00f : 1.05f);
-        float pitchJitter = (float)(Math.random() * 0.10f) - 0.05f; // ±0.05
+        float pitchJitter = (float)(Math.random() * 0.10f) - 0.05f;
         float pitch = clamp(basePitch + pitchJitter, 0.85f, 1.15f);
 
         level.playSound(null, pos, ModSounds.BOW_DRILL_GRIND.get(), SoundSource.PLAYERS, volume, pitch);
@@ -196,6 +238,19 @@ public class FireMakingHandlers {
         sl.sendParticles(ParticleTypes.CLOUD,
                 pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                 6, 0.20, 0.06, 0.20, 0.02);
+    }
+
+    private static void spawnIgniteBurst(Level level, BlockPos pos) {
+        if (!(level instanceof ServerLevel sl)) return;
+        sl.sendParticles(ParticleTypes.FLAME,
+                pos.getX() + 0.5, pos.getY() + 1.05, pos.getZ() + 0.5,
+                8, 0.15, 0.05, 0.15, 0.01);
+        sl.sendParticles(ParticleTypes.SMALL_FLAME,
+                pos.getX() + 0.5, pos.getY() + 1.05, pos.getZ() + 0.5,
+                6, 0.12, 0.04, 0.12, 0.01);
+        sl.sendParticles(ParticleTypes.SMOKE,
+                pos.getX() + 0.5, pos.getY() + 1.10, pos.getZ() + 0.5,
+                6, 0.20, 0.06, 0.20, 0.01);
     }
 
     private static void playCancel(Level level, BlockPos pos) {

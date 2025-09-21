@@ -15,7 +15,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -32,23 +31,31 @@ import java.util.UUID;
 
 @EventBusSubscriber(modid = stone2steel.MODID)
 public class WoodworkHandlers {
-    private static final int SHAPE_TICKS = 60;   // ~3 s
-    private static final int HOLD_GRACE_TICKS = 8;
-    private static final int SWING_PERIOD = 10;
-    private static final int DUST_PERIOD  = 5;
 
+    // ~3 sekundy pri 20 TPS
+    private static final int SHAPE_TICKS = 60;
+    // koľko tickov po poslednom RightClickBlock ešte tolerujeme "držanie" RMB
+    private static final int HOLD_GRACE_TICKS = 8;
+    // rytmus pre jemný swing / pulzy
+    private static final int SWING_PERIOD = 10; // každých ~0.5 s
+    private static final int DUST_PERIOD  = 5;  // medzi-sypnutie prachu
+
+    // Stav prebiehajúcej práce na hráča
     private static final Map<UUID, Shaping> ACTIVE = new HashMap<>();
 
-    private enum Mode { SPINDLE, FIREBOARD, BILLET, TINDER }
+    private enum Mode { SPINDLE, FIREBOARD, BILLET }
 
     private record Shaping(BlockPos pos,
-                           InteractionHand hand,
-                           ItemStack snapshot1,
+                           InteractionHand hand,     // ruka s predmetom (stick/billet/biface)
+                           ItemStack snapshot1,      // 1 ks snímka z ruky (kontrola zmeny + zdroj item-častíc pre SPINDLE/FIREBOARD)
                            Mode mode,
-                           int ticks,
-                           long lastUseGameTime) { }
+                           int ticks,                // koľko už odpracované
+                           long lastUseGameTime      // posledný tick, kedy prišiel RightClickBlock (držané pravé)
+    ) {}
 
-    /* === STICK na ABRASIVE_SURFACES -> SPINDLE === */
+    /* ====================== INTERAKCIE (drž a pracuj) ====================== */
+
+    // STICK na ABRASIVE_SURFACE -> SPINDLE
     @SubscribeEvent
     public static void onStickOnAbrasive(PlayerInteractEvent.RightClickBlock event) {
         Level level = event.getLevel();
@@ -78,7 +85,7 @@ public class WoodworkHandlers {
         }
     }
 
-    /* === WOOD_BILLET na ABRASIVE_SURFACES -> FIREBOARD === */
+    // WOOD_BILLET na ABRASIVE_SURFACE -> FIREBOARD
     @SubscribeEvent
     public static void onBilletOnAbrasive(PlayerInteractEvent.RightClickBlock event) {
         Level level = event.getLevel();
@@ -108,7 +115,7 @@ public class WoodworkHandlers {
         }
     }
 
-    /* === FLINT_BIFACE na LOGS -> WOOD_BILLET (drž) === */
+    // FLINT_BIFACE na LOG -> WOOD_BILLET („rubanie dreva“)
     @SubscribeEvent
     public static void onBifaceOnLog(PlayerInteractEvent.RightClickBlock event) {
         Level level = event.getLevel();
@@ -125,11 +132,8 @@ public class WoodworkHandlers {
         Shaping s = ACTIVE.get(player.getUUID());
         if (s != null && s.mode() == Mode.BILLET && s.hand() == hand && s.pos().equals(pos)) {
             ACTIVE.put(player.getUUID(), new Shaping(s.pos(), s.hand(), s.snapshot1(), s.mode(), s.ticks(), level.getGameTime()));
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.CONSUME);
-            return;
+            event.setCanceled(true); event.setCancellationResult(InteractionResult.CONSUME); return;
         }
-
         if (s == null) {
             beginShaping(event, player, hand, pos, Mode.BILLET, level);
         } else {
@@ -138,45 +142,8 @@ public class WoodworkHandlers {
         }
     }
 
-    /* === TREE_BARK + FLINT_BIFACE na ABRASIVE_SURFACES -> TINDER (drž) === */
-    @SubscribeEvent
-    public static void onBarkWithBiface(PlayerInteractEvent.RightClickBlock event) {
-        Level level = event.getLevel();
-        if (level.isClientSide()) return;
-        var pos = event.getPos();
-        var state = level.getBlockState(pos);
-        if (!state.is(stone2steel.ABRASIVE_SURFACES)) return;
+    /* ====================== ZAČIATOK PRÁCE ====================== */
 
-        Player player = event.getEntity();
-        var hand  = event.getHand();
-        var other = (hand == InteractionHand.MAIN_HAND) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-
-        ItemStack a = player.getItemInHand(hand);
-        ItemStack b = player.getItemInHand(other);
-
-        boolean handIsBark   = a.is(stone2steel.TREE_BARK.get())    && b.is(stone2steel.FLINT_BIFACE.get());
-        boolean handIsBiface = a.is(stone2steel.FLINT_BIFACE.get()) && b.is(stone2steel.TREE_BARK.get());
-        if (!handIsBark && !handIsBiface) return;
-
-        InteractionHand materialHand = handIsBark ? hand : other; // kôra je „materiál“ (spotrebuje sa)
-
-        Shaping s = ACTIVE.get(player.getUUID());
-        if (s != null && s.mode() == Mode.TINDER && s.hand() == materialHand && s.pos().equals(pos)) {
-            ACTIVE.put(player.getUUID(), new Shaping(s.pos(), s.hand(), s.snapshot1(), s.mode(), s.ticks(), level.getGameTime()));
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.CONSUME);
-            return;
-        }
-
-        if (s == null) {
-            beginShaping(event, player, materialHand, pos, Mode.TINDER, level);
-        } else {
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.CONSUME);
-        }
-    }
-
-    /* === Spoločný lifecycle === */
     private static void beginShaping(PlayerInteractEvent.RightClickBlock event,
                                      Player player, InteractionHand hand, BlockPos pos, Mode mode, Level level) {
         ItemStack snap = player.getItemInHand(hand).copy();
@@ -188,14 +155,18 @@ public class WoodworkHandlers {
         event.setCancellationResult(InteractionResult.CONSUME);
 
         player.swing(hand, true);
+
+        // štartové efekty
         if (mode == Mode.BILLET) {
             playChopSound(level, pos, 0.35f, 1.00f);
-            spawnWoodChips(level, pos, 1);
+            spawnLayeredBlockChips(level, pos, 0);
         } else {
             playGrindSound(level, pos, 0.32f, 1.00f);
             spawnItemChips(level, pos, snap, 1);
         }
     }
+
+    /* ====================== TICK: progres, efekty, dokončenie ====================== */
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -206,30 +177,52 @@ public class WoodworkHandlers {
         Shaping s = ACTIVE.get(player.getUUID());
         if (s == null) return;
 
-        if (!stillValid(player, s)) { ACTIVE.remove(player.getUUID()); playCancelSound(level, s.pos()); return; }
+        // stále platné podmienky?
+        if (!stillValid(player, s)) {
+            ACTIVE.remove(player.getUUID());
+            playCancelSound(level, s.pos());
+            return;
+        }
 
+        // uvoľnené RMB?
         long now = level.getGameTime();
-        if (now - s.lastUseGameTime() > HOLD_GRACE_TICKS) { ACTIVE.remove(player.getUUID()); playCancelSound(level, s.pos()); return; }
+        if (now - s.lastUseGameTime() > HOLD_GRACE_TICKS) {
+            ACTIVE.remove(player.getUUID());
+            playCancelSound(level, s.pos());
+            return;
+        }
 
         int t = s.ticks() + 1;
 
+        // rytmický jemný swing + hlavné pulzy
         if (t % SWING_PERIOD == 0) {
             player.swing(s.hand(), true);
             if (s.mode() == Mode.BILLET) {
-                spawnLayeredWoodChips(level, s.pos(), t);
+                spawnLayeredBlockChips(level, s.pos(), t);
                 playChopPulse(level, s.pos(), player.getRandom(), t);
-            } else {
+            } else { // SPINDLE/FIREBOARD
                 spawnLayeredItemChips(level, s.pos(), s.snapshot1(), t);
                 playGrindPulse(level, s.pos(), player.getRandom(), t);
             }
         }
-        if (t % DUST_PERIOD == 0) spawnDust(level, s.pos(), 1);
 
-        if (t == SHAPE_TICKS / 2) {
-            if (s.mode() == Mode.BILLET) { playChopSound(level, s.pos(), 0.40f, 1.10f); }
-            else { spawnMidItemBurst(level, s.pos(), s.snapshot1()); playGrindSound(level, s.pos(), 0.40f, 1.10f); }
+        // medziprach
+        if (t % DUST_PERIOD == 0) {
+            spawnDust(level, s.pos(), 1);
         }
 
+        // akcent v polovici
+        if (t == SHAPE_TICKS / 2) {
+            switch (s.mode()) {
+                case BILLET -> playChopSound(level, s.pos(), 0.40f, 1.10f);
+                case SPINDLE, FIREBOARD -> {
+                    spawnMidItemBurst(level, s.pos(), s.snapshot1());
+                    playGrindSound(level, s.pos(), 0.40f, 1.10f);
+                }
+            }
+        }
+
+        // dokončenie
         if (t >= SHAPE_TICKS) {
             spawnSuccessPoof(level, s.pos());
             switch (s.mode()) {
@@ -250,28 +243,18 @@ public class WoodworkHandlers {
                     player.displayClientMessage(Component.translatable("msg.stone2steel.billet_ok"), true);
                     playChopSuccess(level, s.pos());
                 }
-                case TINDER -> {
-                    // -1 bark, poškodiť biface v druhej ruke o 1, +1 tinder
-                    InteractionHand other = (s.hand() == InteractionHand.MAIN_HAND) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-                    player.getItemInHand(s.hand()).shrink(1);
-                    ItemStack tool = player.getItemInHand(other);
-                    if (tool.is(stone2steel.FLINT_BIFACE.get())) {
-                        EquipmentSlot slot = (other == InteractionHand.MAIN_HAND) ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
-                        tool.hurtAndBreak(1, player, slot);
-                    }
-                    giveOrDrop(player, new ItemStack(stone2steel.TINDER.get(), 1));
-                    player.displayClientMessage(Component.translatable("msg.stone2steel.tinder_ok"), true);
-                    playGrindSuccess(level, s.pos());
-                }
             }
             ACTIVE.remove(player.getUUID());
             return;
         }
 
-        ACTIVE.put(player.getUUID(), new Shaping(s.pos(), s.hand(), s.snapshot1(), s.mode(), t, s.lastUseGameTime()));
+        // inkrement tickov
+        ACTIVE.put(player.getUUID(),
+                new Shaping(s.pos(), s.hand(), s.snapshot1(), s.mode(), t, s.lastUseGameTime()));
     }
 
     private static boolean stillValid(Player player, Shaping s) {
+        // hráč musí držať rovnakú položku (typ + NBT) v rovnakej ruke
         ItemStack current = player.getItemInHand(s.hand()).copy();
         current.setCount(1);
         if (!ItemStack.isSameItemSameComponents(current, s.snapshot1())) return false;
@@ -282,23 +265,25 @@ public class WoodworkHandlers {
         return switch (s.mode()) {
             case SPINDLE, FIREBOARD -> state.is(stone2steel.ABRASIVE_SURFACES) && distOk;
             case BILLET -> state.is(BlockTags.LOGS) && distOk;
-            case TINDER -> state.is(stone2steel.ABRASIVE_SURFACES) && distOk
-                    && player.getItemInHand((s.hand() == InteractionHand.MAIN_HAND) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND)
-                    .is(stone2steel.FLINT_BIFACE.get());
         };
     }
 
     private static void giveOrDrop(Player player, ItemStack stack) {
-        if (!player.addItem(stack)) player.drop(stack, false);
+        if (!player.addItem(stack)) {
+            player.drop(stack, false);
+        }
     }
 
-    /* === vizuály + zvuky === */
+    /* ========================== Vizuály + zvuky ========================== */
+
+    // — ITEM triesky (spindle / fireboard) —
     private static void spawnItemChips(Level level, BlockPos pos, ItemStack item, int count) {
         if (!(level instanceof ServerLevel sl)) return;
         sl.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, item),
                 pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                 count, 0.08, 0.02, 0.08, 0.01);
     }
+
     private static void spawnLayeredItemChips(Level level, BlockPos pos, ItemStack item, int t) {
         if (!(level instanceof ServerLevel sl)) return;
         int count = (t <= 20) ? 1 : (t <= 40 ? 2 : 3);
@@ -309,6 +294,7 @@ public class WoodworkHandlers {
                 pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                 1, 0.10, 0.02, 0.10, 0.00);
     }
+
     private static void spawnMidItemBurst(Level level, BlockPos pos, ItemStack item) {
         if (!(level instanceof ServerLevel sl)) return;
         sl.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, item),
@@ -318,20 +304,9 @@ public class WoodworkHandlers {
                 pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                 2, 0.12, 0.02, 0.12, 0.00);
     }
-    private static void spawnDust(Level level, BlockPos pos, int count) {
-        if (!(level instanceof ServerLevel sl)) return;
-        sl.sendParticles(ParticleTypes.ASH,
-                pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
-                count, 0.10, 0.02, 0.10, 0.00);
-    }
-    private static void spawnWoodChips(Level level, BlockPos pos, int count) {
-        if (!(level instanceof ServerLevel sl)) return;
-        var state = sl.getBlockState(pos);
-        sl.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
-                pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
-                count, 0.08, 0.02, 0.08, 0.01);
-    }
-    private static void spawnLayeredWoodChips(Level level, BlockPos pos, int t) {
+
+    // — BLOCK triesky (z bloku pod rukou; používame pri BILLET) —
+    private static void spawnLayeredBlockChips(Level level, BlockPos pos, int t) {
         if (!(level instanceof ServerLevel sl)) return;
         var state = sl.getBlockState(pos);
         int count = (t <= 20) ? 1 : (t <= 40 ? 2 : 3);
@@ -342,6 +317,14 @@ public class WoodworkHandlers {
                 pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                 1, 0.10, 0.02, 0.10, 0.00);
     }
+
+    private static void spawnDust(Level level, BlockPos pos, int count) {
+        if (!(level instanceof ServerLevel sl)) return;
+        sl.sendParticles(ParticleTypes.ASH,
+                pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
+                count, 0.10, 0.02, 0.10, 0.00);
+    }
+
     private static void spawnSuccessPoof(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel sl)) return;
         sl.sendParticles(ParticleTypes.CLOUD,
@@ -349,6 +332,7 @@ public class WoodworkHandlers {
                 6, 0.20, 0.06, 0.20, 0.02);
     }
 
+    // zvuky – brúsenie (SPINDLE/FIREBOARD) a „rubanie“ (BILLET)
     private static void playGrindSound(Level level, BlockPos pos, float volume, float pitch) {
         level.playSound(null, pos, SoundEvents.GRINDSTONE_USE, SoundSource.PLAYERS, volume, pitch);
     }
@@ -362,6 +346,7 @@ public class WoodworkHandlers {
         level.playSound(null, pos, SoundEvents.CANDLE_EXTINGUISH, SoundSource.PLAYERS, 0.45f, 1.00f);
         level.playSound(null, pos, SoundEvents.ITEM_PICKUP,      SoundSource.PLAYERS, 0.40f, 1.00f);
     }
+
     private static void playChopSound(Level level, BlockPos pos, float volume, float pitch) {
         level.playSound(null, pos, SoundEvents.WOOD_HIT, SoundSource.PLAYERS, volume, pitch);
     }
