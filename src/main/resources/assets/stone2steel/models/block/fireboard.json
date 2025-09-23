@@ -1,20 +1,14 @@
 {
-  "parent": "minecraft:block/block",
+  "loader": "neoforge:obj",
+  "model": "stone2steel:models/block/fireboard.obj",
+  "mtl_override": "stone2steel:models/block/fireboard.mtl",
   "textures": {
-    "all": "minecraft:block/oak_planks"
+    "tex_board": "stone2steel:block/fireboard",
+    "particle": "stone2steel:block/fireboard"
   },
-  "elements": [
-    {
-      "from": [0, 0, 0],
-      "to":   [16, 2, 16],
-      "faces": {
-        "up":    {"texture": "#all"},
-        "down":  {"texture": "#all"},
-        "north": {"texture": "#all"},
-        "south": {"texture": "#all"},
-        "west":  {"texture": "#all"},
-        "east":  {"texture": "#all"}
-      }
-    }
-  ]
+  "render_type": "cutout",
+  "automatic_culling": false,
+  "shade_quads": true,
+  "flip_v": false,
+  "transform": { "translation": [0.5, 0.0, 0.46875] }
 }

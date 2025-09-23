@@ -1,20 +1,15 @@
 {
-  "parent": "minecraft:block/block",
+  "loader": "neoforge:obj",
+  "model": "stone2steel:models/block/kindling.obj",
+  "mtl_override": "stone2steel:models/block/kindling.mtl",
   "textures": {
-    "all": "minecraft:block/oak_log"
+    "tex_sticks": "stone2steel:block/kindling_texture1",
+    "tex_twine": "stone2steel:block/kindling_texture2",
+    "particle": "stone2steel:block/kindling_texture1"
   },
-  "elements": [
-    {
-      "from": [2, 0, 2],
-      "to":   [14, 6, 14],
-      "faces": {
-        "up":    {"texture": "#all"},
-        "down":  {"texture": "#all"},
-        "north": {"texture": "#all"},
-        "south": {"texture": "#all"},
-        "west":  {"texture": "#all"},
-        "east":  {"texture": "#all"}
-      }
-    }
-  ]
+  "render_type": "cutout",
+  "automatic_culling": false,
+  "shade_quads": true,
+  "flip_v": true,
+  "transform": { "translation": [0.492714, 0.0, 0.478023] }
 }

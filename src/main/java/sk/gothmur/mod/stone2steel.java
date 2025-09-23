@@ -1,7 +1,10 @@
 package sk.gothmur.mod;
 
 import com.mojang.logging.LogUtils;
+import com.mojang.serialization.MapCodec;
 import org.slf4j.Logger;
+
+import java.util.function.Supplier;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -16,6 +19,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 
+import sk.gothmur.mod.block.FireboardBlock;
+import sk.gothmur.mod.block.KindlingBlock;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -24,14 +29,20 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import sk.gothmur.mod.registry.ModSounds;
+import sk.gothmur.mod.registry.ModRecipes;
+
 import sk.gothmur.mod.item.FlintBifaceItem;
 import sk.gothmur.mod.item.FlintKnifeItem;
 import sk.gothmur.mod.item.FlintAxeItem;
+import sk.gothmur.mod.item.FlintShovelItem;
+import sk.gothmur.mod.loot.FlintShovelGravelFlintModifier;
+import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 
 @Mod(stone2steel.MODID)
 public class stone2steel {
@@ -65,6 +76,24 @@ public class stone2steel {
     public static final DeferredItem<Item> BOW_DRILL = ITEMS.registerSimpleItem("bow_drill"); // názov z receptu
     public static final DeferredItem<Item> TINDER = ITEMS.registerSimpleItem("tinder");
 
+    // Flint Shovel
+    public static final DeferredHolder<Item, FlintShovelItem> FLINT_SHOVEL =
+            ITEMS.register("flint_shovel", () ->
+                    new FlintShovelItem(
+                            Tiers.WOOD,
+                            new Item.Properties()
+                                    .durability(50) // menšia výdrž než drevo (59)
+                                    .attributes(DiggerItem.createAttributes(Tiers.WOOD, 1.5F, -3.0F)) // damage/speed pre lopaty
+                    )
+            );
+
+    // --- Global Loot Modifiers (GLM) ---
+    public static final DeferredRegister<MapCodec<? extends IGlobalLootModifier>> GLM_SERIALIZERS =
+            DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, MODID);
+
+    public static final Supplier<MapCodec<FlintShovelGravelFlintModifier>> FLINT_SHOVEL_FLINT_CODEC =
+            GLM_SERIALIZERS.register("flint_shovel_flint", () -> FlintShovelGravelFlintModifier.CODEC);
+
     public static final DeferredItem<AxeItem> FLINT_AXE =
             ITEMS.register("flint_axe",
                     () -> new FlintAxeItem(
@@ -75,28 +104,39 @@ public class stone2steel {
                             )
                     ));
 
-
-
-
     // nový polotovar na drevo-prácu
     public static final DeferredItem<Item> WOOD_BILLET = ITEMS.registerSimpleItem("wood_billet");
 
-    // --- BLOCKS + ich Itemy ---
-    public static final DeferredBlock<Block> FIREBOARD_BLOCK =
-            BLOCKS.registerSimpleBlock("fireboard",
-                    BlockBehaviour.Properties.of()
-                            .mapColor(MapColor.WOOD)
-                            .strength(1.0F));
+    // Fireboard
+    public static final DeferredBlock<FireboardBlock> FIREBOARD_BLOCK =
+            BLOCKS.register("fireboard",
+                    () -> new FireboardBlock(
+                            BlockBehaviour.Properties.of()
+                                    .mapColor(MapColor.WOOD)
+                                    .strength(1.0F)
+                                    .noOcclusion()
+                                    .isRedstoneConductor((s,l,p) -> false)
+                                    .isSuffocating((s,l,p) -> false)
+                                    .isViewBlocking((s,l,p) -> false)
+                    )
+            );
 
     public static final DeferredItem<BlockItem> FIREBOARD =
             ITEMS.registerSimpleBlockItem("fireboard", FIREBOARD_BLOCK);
 
-    // Kindling blok (ak ho už máš registrovaný inde, ponechaj; inak základná registrácia)
-    public static final DeferredBlock<Block> KINDLING_BLOCK =
-            BLOCKS.registerSimpleBlock("kindling",
-                    BlockBehaviour.Properties.of()
-                            .mapColor(MapColor.WOOD)
-                            .strength(0.5F));
+    // Kindling
+    public static final DeferredBlock<KindlingBlock> KINDLING_BLOCK =
+            BLOCKS.register("kindling",
+                    () -> new KindlingBlock(
+                            BlockBehaviour.Properties.of()
+                                    .mapColor(MapColor.WOOD)
+                                    .strength(0.5F)
+                                    .noOcclusion()
+                                    .isRedstoneConductor((s,l,p) -> false)
+                                    .isSuffocating((s,l,p) -> false)
+                                    .isViewBlocking((s,l,p) -> false)
+                    )
+            );
 
     public static final DeferredItem<BlockItem> KINDLING =
             ITEMS.registerSimpleBlockItem("kindling", KINDLING_BLOCK);
@@ -133,14 +173,20 @@ public class stone2steel {
                         out.accept(KINDLING.get());
                         out.accept(TINDER.get());
                         out.accept(FLINT_AXE.get());
+                        out.accept(FLINT_SHOVEL.get()); // <- pridané do tabu
                     })
                     .build());
 
+    // Konštruktor s injekciou mod-busu a kontajnera (NeoForge štýl)
     public stone2steel(IEventBus modBus, ModContainer modContainer) {
+        ModRecipes.register(modBus);
         ITEMS.register(modBus);
         BLOCKS.register(modBus);
         TABS.register(modBus);
         ModSounds.register(modBus);
+
+        // FIX: registrácia GLM na ten istý event bus:
+        GLM_SERIALIZERS.register(modBus);
 
         modBus.addListener(this::commonSetup);
 
