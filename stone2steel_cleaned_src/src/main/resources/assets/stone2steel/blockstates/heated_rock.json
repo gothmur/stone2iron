@@ -1,0 +1,15 @@
+{
+  "multipart": [
+    { "when": { "base": "stone" },                "apply": { "model": "minecraft:block/stone" } },
+    { "when": { "base": "andesite" },             "apply": { "model": "minecraft:block/andesite" } },
+    { "when": { "base": "diorite" },              "apply": { "model": "minecraft:block/diorite" } },
+    { "when": { "base": "granite" },              "apply": { "model": "minecraft:block/granite" } },
+    { "when": { "base": "deepslate" },            "apply": { "model": "minecraft:block/deepslate" } },
+    { "when": { "base": "copper_ore" },           "apply": { "model": "minecraft:block/copper_ore" } },
+    { "when": { "base": "deepslate_copper_ore" }, "apply": { "model": "minecraft:block/deepslate_copper_ore" } },
+
+    { "when": { "heat_stage": "1" }, "apply": { "model": "stone2steel:block/overlay_heat_stage1" } },
+    { "when": { "heat_stage": "2" }, "apply": { "model": "stone2steel:block/overlay_heat_stage2" } },
+    { "when": { "heat_stage": "3" }, "apply": { "model": "stone2steel:block/overlay_heat_stage3" } }
+  ]
+}

@@ -3,6 +3,7 @@
   "ingredients": [
     { "item": "stone2steel:flint_shard" },
     { "item": "stone2steel:sap_glue" },
+    { "item": "stone2steel:tendon" },
     { "item": "minecraft:stick" }
   ],
   "result": { "id": "stone2steel:flint_knife", "count": 1 }

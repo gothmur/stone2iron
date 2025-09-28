@@ -1,0 +1,20 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": { "all": "stone2steel:block/heat_overlay_stage1" },
+  "ambientocclusion": false,
+  "render_type": "translucent",
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to":   [16, 16, 16],
+      "faces": {
+        "down":  { "texture": "#all" },
+        "up":    { "texture": "#all" },
+        "north": { "texture": "#all" },
+        "south": { "texture": "#all" },
+        "west":  { "texture": "#all" },
+        "east":  { "texture": "#all" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "stone2steel:tree_bark" },
+    { "item": "stone2steel:sap_glue" },
+    { "tag": "stone2steel:binders" }
+  ],
+  "result": { "id": "stone2steel:bark_container_empty", "count": 1 }
+}

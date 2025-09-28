@@ -15,7 +15,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.DiggerItem;
-import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 
@@ -38,8 +37,6 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 import net.neoforged.neoforge.common.NeoForge;
 
-import sk.gothmur.mod.perishables.Perishables;
-import sk.gothmur.mod.perishables.PerishablesConfig;
 import sk.gothmur.mod.registry.ModSounds;
 import sk.gothmur.mod.registry.ModRecipes;
 import sk.gothmur.mod.item.BarkContainerFullItem;
@@ -49,8 +46,6 @@ import sk.gothmur.mod.item.FlintKnifeItem;
 import sk.gothmur.mod.item.FlintAxeItem;
 import sk.gothmur.mod.item.FlintShovelItem;
 import sk.gothmur.mod.item.GraniteMaulItem;
-import sk.gothmur.mod.item.FlintSwordItem;
-
 import sk.gothmur.mod.loot.FlintShovelGravelFlintModifier;
 import sk.gothmur.mod.loot.GravelBoulderDropModifier;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
@@ -90,26 +85,6 @@ public class stone2steel {
 
     public static final DeferredItem<Item> GRANITE_BOULDER = ITEMS.registerSimpleItem("granite_boulder");
 
-    public static final DeferredItem<Item> ROTTEN_SCRAPS =
-            ITEMS.registerSimpleItem("rotten_scraps");
-
-    public static final DeferredItem<Item> PRIMITIVE_SHIELD =
-            ITEMS.register("primitive_shield", () ->
-                    new ShieldItem(new Item.Properties()
-                            .stacksTo(1)
-                            .durability(168) // polovica vanilla 336
-                    )
-            );
-
-    public static final DeferredItem<Item> FLINT_SWORD =
-            ITEMS.register("flint_sword", () ->
-                    new FlintSwordItem(
-                            Tiers.WOOD,
-                            new Item.Properties()
-                                    .durability(59) // rovnaká výdrž ako drevený meč
-                    )
-            );
-
     public static final DeferredItem<Item> GRANITE_MAUL =
             ITEMS.register("granite_maul",
                     () -> new GraniteMaulItem(
@@ -117,12 +92,14 @@ public class stone2steel {
                                     .durability(120) // slušná výdrž, doladíš podľa playtestu
                     ));
 
+
     // Bark Container (1 náplň): empty/full
     public static final DeferredItem<Item> BARK_CONTAINER_EMPTY =
             ITEMS.register("bark_container_empty", () -> new BarkContainerEmptyItem(new Item.Properties().stacksTo(16)));
 
     public static final DeferredItem<Item> BARK_CONTAINER_FULL =
             ITEMS.register("bark_container_full", () -> new BarkContainerFullItem(new Item.Properties().stacksTo(16)));
+
 
     // Flint Shovel
     public static final DeferredHolder<Item, FlintShovelItem> FLINT_SHOVEL =
@@ -144,6 +121,7 @@ public class stone2steel {
 
     public static final Supplier<MapCodec<GravelBoulderDropModifier>> GRAVEL_BOULDER_CODEC =
             GLM_SERIALIZERS.register("gravel_boulder", () -> GravelBoulderDropModifier.CODEC);
+
 
     public static final DeferredItem<AxeItem> FLINT_AXE =
             ITEMS.register("flint_axe",
@@ -214,6 +192,8 @@ public class stone2steel {
     public static final DeferredItem<BlockItem> FRACTURED_ROCK_DBG =
             ITEMS.registerSimpleBlockItem("fractured_rock", FRACTURED_ROCK);
 
+
+
     // Tag pre brúsne povrchy (definovaný v data tagoch); tu len odkaz (public nech ho vedia používať handlery)
     public static final net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> ABRASIVE_SURFACES =
             net.minecraft.tags.TagKey.create(Registries.BLOCK,
@@ -247,15 +227,11 @@ public class stone2steel {
                         out.accept(TINDER.get());
                         out.accept(FLINT_AXE.get());
                         out.accept(FLINT_SHOVEL.get());
-                        out.accept(HEATED_ROCK_DBG.get());
-                        out.accept(FRACTURED_ROCK_DBG.get());
-                        out.accept(BARK_CONTAINER_EMPTY.get());
+                                                out.accept(BARK_CONTAINER_EMPTY.get());
                         out.accept(BARK_CONTAINER_FULL.get());
                         out.accept(GRANITE_MAUL.get());
                         out.accept(GRANITE_BOULDER.get());
-                        out.accept(FLINT_SWORD.get());
-                        out.accept(PRIMITIVE_SHIELD.get());
-                        out.accept(ROTTEN_SCRAPS.get());
+
                     })
                     .build());
 
@@ -267,29 +243,20 @@ public class stone2steel {
         TABS.register(modBus);
         ModSounds.register(modBus);
 
-        // registrácia GLM na ten istý event bus:
+        // FIX: registrácia GLM na ten istý event bus:
         GLM_SERIALIZERS.register(modBus);
 
         modBus.addListener(this::commonSetup);
 
-        // campfire heating (GAME bus)
         NeoForge.EVENT_BUS.addListener(CampfireHeatingHandler::onLevelTickPost);
 
-        // Configy
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC); // core config
-        modContainer.registerConfig(
-                ModConfig.Type.COMMON,
-                sk.gothmur.mod.perishables.PerishablesConfig.SPEC,
-                "stone2steel-perishables-common.toml" // samostatný súbor pre perishables
-        );
+
+
+        // správny enum: COMMON (nie Common)
+        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
     private void commonSetup(FMLCommonSetupEvent evt) {
         LOGGER.info("[{}] init complete", MODID);
-
-        // zapni perishables len keď je hard-config povolený (a nie je globálne vypnutý cez decayRate=0)
-        if (PerishablesConfig.ENABLED.get() && PerishablesConfig.DECAY_RATE.get() > 0.0) {
-            Perishables.init(); // zaregistruje event listenery
-        }
     }
 }

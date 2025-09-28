@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "stone2steel:wood_billet" }
+  ],
+  "result": { "id": "stone2steel:primitive_shield", "count": 1 }
+}

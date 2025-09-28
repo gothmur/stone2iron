@@ -1,0 +1,15 @@
+{
+  "loader": "neoforge:obj",
+  "model": "stone2steel:models/block/kindling.obj",
+  "mtl_override": "stone2steel:models/block/kindling.mtl",
+  "textures": {
+    "tex_sticks": "stone2steel:block/kindling_texture1",
+    "tex_twine": "stone2steel:block/kindling_texture2",
+    "particle": "stone2steel:block/kindling_texture1"
+  },
+  "render_type": "cutout",
+  "automatic_culling": false,
+  "shade_quads": true,
+  "flip_v": true,
+  "transform": { "translation": [0.492714, 0.0, 0.478023] }
+}

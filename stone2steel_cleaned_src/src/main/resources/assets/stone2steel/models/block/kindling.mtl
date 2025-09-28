@@ -1,0 +1,9 @@
+# Kindling – material names MUST match OBJ
+newmtl m_97131f77-4e3a-3c1d-a58b-7fabf1e2f36e
+map_Kd #tex_sticks
+
+# ak má OBJ druhý materiál, necháme aj tento alias (ak by bol inak, zmeň podľa usemtl v .obj):
+newmtl m_91a5b9d6-0fa4-6048-0ca5-c88c1596668e
+map_Kd #tex_twine
+
+newmtl none
