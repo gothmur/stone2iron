@@ -1,9 +1,0 @@
-{
-  "type": "stone2steel:full_durability_shapeless",
-  "ingredients": [
-    { "item": "stone2steel:rope" },
-    { "item": "minecraft:stick" },
-    { "item": "stone2steel:flint_biface" }
-  ],
-  "result": { "id": "stone2steel:flint_axe", "count": 1 }
-}

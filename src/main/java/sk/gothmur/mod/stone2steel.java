@@ -18,6 +18,12 @@ import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.block.Block;
+
+import net.minecraft.world.level.block.entity.BlockEntityType;
+
+import sk.gothmur.mod.block.GrindstoneBlock;
+import sk.gothmur.mod.blockentity.GrindstoneBlockEntity;
 
 import sk.gothmur.mod.block.FireboardBlock;
 import sk.gothmur.mod.block.KindlingBlock;
@@ -56,6 +62,12 @@ import sk.gothmur.mod.loot.GravelBoulderDropModifier;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import sk.gothmur.mod.system.CampfireHeatingHandler;
 
+// Geo item pre grindstone
+import sk.gothmur.mod.item.GrindstoneBlockItem;
+
+// GeckoLib init
+import software.bernie.geckolib.GeckoLib;
+
 @Mod(stone2steel.MODID)
 public class stone2steel {
     public static final String MODID = "stone2steel";
@@ -88,6 +100,26 @@ public class stone2steel {
     public static final DeferredItem<Item> BOW_DRILL = ITEMS.registerSimpleItem("bow_drill"); // názov z receptu
     public static final DeferredItem<Item> TINDER = ITEMS.registerSimpleItem("tinder");
 
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
+            DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
+
+    public static final DeferredBlock<GrindstoneBlock> GRINDSTONE =
+            BLOCKS.register("grindstone", () -> new GrindstoneBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.STONE)
+                            .strength(2.0F, 6.0F)
+                            .noOcclusion()
+            ));
+
+    // Geo BlockItem pre inventár/hand render
+    public static final DeferredItem<Item> GRINDSTONE_ITEM =
+            ITEMS.register("grindstone", () -> new GrindstoneBlockItem(GRINDSTONE.get(), new Item.Properties()));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GrindstoneBlockEntity>> GRINDSTONE_BE =
+            BLOCK_ENTITY_TYPES.register("grindstone", () ->
+                    BlockEntityType.Builder.of(GrindstoneBlockEntity::new, GRINDSTONE.get()).build(null)
+            );
+
     public static final DeferredItem<Item> GRANITE_BOULDER = ITEMS.registerSimpleItem("granite_boulder");
 
     public static final DeferredItem<Item> ROTTEN_SCRAPS =
@@ -114,7 +146,7 @@ public class stone2steel {
             ITEMS.register("granite_maul",
                     () -> new GraniteMaulItem(
                             new Item.Properties()
-                                    .durability(120) // slušná výdrž, doladíš podľa playtestu
+                                    .durability(120) // doladíš podľa playtestu
                     ));
 
     // Bark Container (1 náplň): empty/full
@@ -130,12 +162,11 @@ public class stone2steel {
                     new FlintShovelItem(
                             Tiers.WOOD,
                             new Item.Properties()
-                                    .durability(50) // menšia výdrž než drevo (59)
-                                    .attributes(DiggerItem.createAttributes(Tiers.WOOD, 1.5F, -3.0F)) // damage/speed pre lopaty
+                                    .durability(50)
+                                    .attributes(DiggerItem.createAttributes(Tiers.WOOD, 1.5F, -3.0F))
                     )
             );
 
-    // --- Global Loot Modifiers (GLM) ---
     public static final DeferredRegister<MapCodec<? extends IGlobalLootModifier>> GLM_SERIALIZERS =
             DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, MODID);
 
@@ -150,12 +181,10 @@ public class stone2steel {
                     () -> new FlintAxeItem(
                             Tiers.STONE,
                             new Item.Properties().attributes(
-                                    // Axe = DiggerItem → nastav DMG & AS ako vanilla stone axe
                                     DiggerItem.createAttributes(Tiers.STONE, 7.0F, -3.2F)
                             )
                     ));
 
-    // nový polotovar na drevo-prácu
     public static final DeferredItem<Item> WOOD_BILLET = ITEMS.registerSimpleItem("wood_billet");
 
     // Fireboard
@@ -192,12 +221,12 @@ public class stone2steel {
     public static final DeferredItem<BlockItem> KINDLING =
             ITEMS.registerSimpleBlockItem("kindling", KINDLING_BLOCK);
 
-    // Heated & Fractured rock vizuálne bloky (bez itemov – world-only)
+    // Heated & Fractured rock
     public static final DeferredBlock<HeatedRockBlock> HEATED_ROCK =
             BLOCKS.register("heated_rock", () -> new HeatedRockBlock(
                     BlockBehaviour.Properties.of()
                             .mapColor(MapColor.STONE)
-                            .strength(1.5F, 6.0F)     // ~stone
+                            .strength(1.5F, 6.0F)
                             .requiresCorrectToolForDrops()
             ));
 
@@ -205,21 +234,18 @@ public class stone2steel {
             BLOCKS.register("fractured_rock", () -> new FracturedRockBlock(
                     BlockBehaviour.Properties.of()
                             .mapColor(MapColor.STONE)
-                            .strength(0.6F, 0.6F)     // ľahko rozbitné
+                            .strength(0.6F, 0.6F)
             ));
 
-    // Debug BlockItemy (aby sa dali ľahko testovať v hre)
     public static final DeferredItem<BlockItem> HEATED_ROCK_DBG =
             ITEMS.registerSimpleBlockItem("heated_rock", HEATED_ROCK);
     public static final DeferredItem<BlockItem> FRACTURED_ROCK_DBG =
             ITEMS.registerSimpleBlockItem("fractured_rock", FRACTURED_ROCK);
 
-    // Tag pre brúsne povrchy (definovaný v data tagoch); tu len odkaz (public nech ho vedia používať handlery)
     public static final net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> ABRASIVE_SURFACES =
             net.minecraft.tags.TagKey.create(Registries.BLOCK,
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "abrasive_surfaces"));
 
-    // --- Creative Tab (nepovinné) ---
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MAIN_TAB =
             TABS.register("main", () -> CreativeModeTab.builder()
                     .icon(() -> FLINT_BIFACE.get().getDefaultInstance())
@@ -256,40 +282,41 @@ public class stone2steel {
                         out.accept(FLINT_SWORD.get());
                         out.accept(PRIMITIVE_SHIELD.get());
                         out.accept(ROTTEN_SCRAPS.get());
+                        out.accept(GRINDSTONE_ITEM.get()); // Geo item
                     })
                     .build());
 
-    // Konštruktor s injekciou mod-busu a kontajnera (NeoForge štýl)
+    // Konštruktor – NeoForge injektuje modBus a modContainer
     public stone2steel(IEventBus modBus, ModContainer modContainer) {
+        // Registrácie
         ModRecipes.register(modBus);
         ITEMS.register(modBus);
         BLOCKS.register(modBus);
         TABS.register(modBus);
+        BLOCK_ENTITY_TYPES.register(modBus);
         ModSounds.register(modBus);
-
-        // registrácia GLM na ten istý event bus:
         GLM_SERIALIZERS.register(modBus);
 
-        modBus.addListener(this::commonSetup);
+        // GeckoLib — inicializovať presne raz
+        // GeckoLib.initialize();
 
-        // campfire heating (GAME bus)
+        // Listener-y
+        modBus.addListener(this::commonSetup);
         NeoForge.EVENT_BUS.addListener(CampfireHeatingHandler::onLevelTickPost);
 
         // Configy
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC); // core config
         modContainer.registerConfig(
                 ModConfig.Type.COMMON,
-                sk.gothmur.mod.perishables.PerishablesConfig.SPEC,
-                "stone2steel-perishables-common.toml" // samostatný súbor pre perishables
+                PerishablesConfig.SPEC,
+                "stone2steel-perishables-common.toml"
         );
     }
 
     private void commonSetup(FMLCommonSetupEvent evt) {
         LOGGER.info("[{}] init complete", MODID);
-
-        // zapni perishables len keď je hard-config povolený (a nie je globálne vypnutý cez decayRate=0)
         if (PerishablesConfig.ENABLED.get() && PerishablesConfig.DECAY_RATE.get() > 0.0) {
-            Perishables.init(); // zaregistruje event listenery
+            Perishables.init();
         }
     }
 }

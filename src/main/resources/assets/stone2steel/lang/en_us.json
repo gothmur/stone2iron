@@ -42,6 +42,7 @@
   "tooltip.stone2steel.stale_percent": "Stale (%s%%)",
   "tooltip.stone2steel.spoiled_percent": "Spoiled (%s%%)",
   "tooltip.stone2steel.rotten": "Rotten",
+  "block.stone2steel.grindstone": "Grindstone",
 
   "msg.stone2steel.billet_ok": "You split off a wood billet.",
   "msg.stone2steel.spindle_ok": "You shaped a spindle.",

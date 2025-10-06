@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    { "item": "minecraft:stick" },
-    { "item": "stone2steel:granite_boulder" },
-    { "item": "stone2steel:rope" }
-  ],
-  "result": { "id": "stone2steel:granite_maul", "count": 1 }
-}

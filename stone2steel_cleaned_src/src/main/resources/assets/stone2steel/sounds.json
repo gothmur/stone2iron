@@ -1,8 +1,0 @@
-{
-  "bow_drill.grind": {
-    "sounds": [
-      { "name": "stone2steel:bow_drill_grind", "stream": true }
-    ],
-    "subtitle": "subtitles.stone2steel.bow_drill.grind"
-  }
-}

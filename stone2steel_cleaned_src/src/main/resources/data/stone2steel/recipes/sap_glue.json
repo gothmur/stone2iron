@@ -1,8 +1,0 @@
-{
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    { "item": "stone2steel:tree_sap" },
-    { "item": "stone2steel:ash" }
-  ],
-  "result": { "id": "stone2steel:sap_glue", "count": 1 }
-}

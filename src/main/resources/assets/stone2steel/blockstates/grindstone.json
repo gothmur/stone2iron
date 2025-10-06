@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "stone2steel:block/grindstone" },
+    "facing=south": { "model": "stone2steel:block/grindstone", "y": 180 },
+    "facing=west":  { "model": "stone2steel:block/grindstone", "y": 270 },
+    "facing=east":  { "model": "stone2steel:block/grindstone", "y": 90 }
+  }
+}

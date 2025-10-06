@@ -1,7 +1,0 @@
-{
-  "type": "minecraft:campfire_cooking",
-  "ingredient": { "item": "stone2steel:tree_bark" },
-  "result": { "id": "stone2steel:ash" },
-  "experience": 0.1,
-  "cookingtime": 600
-}
