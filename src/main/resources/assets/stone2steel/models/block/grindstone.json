@@ -1,4 +1,6 @@
 {
-  "ambientocclusion": false,
-  "elements": []
+  "elements": [],
+  "textures": {
+    "particle": "stone2steel:block/grindstone"
+  }
 }
